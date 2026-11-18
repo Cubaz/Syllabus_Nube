@@ -1,0 +1,686 @@
+# PROYECTO: SISTEMA DE GESTIÓN ACADÉMICA – PREPARATORIA UAEH ALFAJAYUCAN
+
+Actúa como un desarrollador Full Stack Senior especializado en Node.js, Express, React, PostgreSQL, Supabase y Prisma ORM.
+
+Quiero que me ayudes a desarrollar mi proyecto universitario de Programación Web: un sistema web para administrar la información académica de la nueva preparatoria de la Universidad Autónoma del Estado de Hidalgo (UAEH), ubicada en Alfajayucan, Hidalgo.
+
+El proyecto ya está iniciado y tiene una estructura de carpetas, archivos de configuración y una base de datos funcional en Supabase.
+
+**NO quiero que comiences desde cero. Quiero que trabajes sobre el proyecto existente, respetando su estructura y aprovechando los archivos que ya tengo.**
+
+---
+
+# 1. ESTRUCTURA ACTUAL DEL PROYECTO
+
+La estructura actual es:
+
+```text
+ProyectoFinal/
+│
+├── backend/
+│   ├── src/
+│   │   ├── config/
+│   │   │   └── database.js
+│   │   ├── controllers/
+│   │   ├── middlewares/
+│   │   ├── models/
+│   │   ├── routes/
+│   │   ├── services/
+│   │   ├── utils/
+│   │   ├── app.js
+│   │   └── server.js
+│   ├── .env
+│   ├── .env.example
+│   ├── nodemon.json
+│   └── package.json
+│
+├── bd/
+│   ├── modelo_er/
+│   │   └── modeloER.drawio
+│   └── scripts/
+│       └── create_tables.sql
+│
+├── docs/
+│   └── Syllabus.drawio.png
+│
+└── frontend/
+    ├── public/
+    └── src/
+        ├── assets/
+        ├── components/
+        ├── context/
+        ├── hooks/
+        ├── pages/
+        ├── routes/
+        ├── services/
+        ├── App.jsx
+        └── main.jsx
+```
+
+Respeta esta estructura.
+
+Puedes proponer nuevas carpetas o archivos cuando sean necesarios, pero primero verifica que no exista una alternativa dentro de la estructura actual.
+
+No dupliques funcionalidades ni archivos.
+
+# 2. CONFIGURACIÓN ACTUAL DEL BACKEND
+
+Actualmente mi `backend/package.json` contiene:
+
+```json
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.0.0",
+    "express": "^5.0.0",
+    "pg": "^8.0.0"
+  }
+}
+```
+
+Mi archivo `backend/src/config/database.js` contiene:
+
+```javascript
+const { Pool } = require("pg");
+require("dotenv").config();
+
+const pool = new Pool({
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT,
+  database: process.env.DB_NAME,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  ssl: {
+    rejectUnauthorized: false,
+  },
+});
+
+module.exports = pool;
+```
+
+Actualmente utilizo:
+
+- Node.js.
+- Express 5.
+- PostgreSQL.
+- pg (node-postgres).
+- dotenv.
+- cors.
+
+La conexión a Supabase ya existe y funciona.
+
+Todavía no tengo Prisma instalado.
+
+Antes de realizar modificaciones:
+
+1. Inspecciona los archivos existentes.
+2. Comprueba qué archivos utilizan actualmente `database.js`.
+3. Identifica si se utiliza CommonJS (`require` y `module.exports`) o ES Modules (`import` y `export`).
+4. Revisa las versiones instaladas de Node.js y npm.
+5. Identifica posibles incompatibilidades entre las dependencias.
+
+No cambies innecesariamente la configuración actual.
+
+# 3. INTEGRACIÓN DE PRISMA ORM
+
+Quiero incorporar Prisma ORM para administrar las consultas y operaciones de la base de datos.
+
+La arquitectura deseada es:
+
+React → API REST → Node.js / Express → Prisma ORM → Supabase PostgreSQL.
+
+## 3.1. Compatibilidad de versiones
+
+Antes de instalar Prisma:
+
+- Comprueba la versión de Node.js.
+- Consulta la versión estable actual de Prisma ORM.
+- Revisa los requisitos de compatibilidad.
+- Identifica las dependencias necesarias.
+- Evita instalar versiones antiguas sin una justificación técnica.
+
+Preferentemente utiliza Prisma ORM 7 si es compatible con el entorno del proyecto.
+
+Si por alguna razón el entorno no es compatible, explica el problema y presenta una alternativa antes de instalar una versión anterior.
+
+## 3.2. Consideraciones especiales de Prisma 7
+
+Ten presente que Prisma 7 introduce cambios importantes respecto a versiones anteriores:
+
+- Utiliza adaptadores de base de datos para Prisma Client.
+- La configuración de conexión se realiza mediante el archivo de configuración de Prisma.
+- Utiliza configuración basada en ES Modules.
+- El generador de Prisma Client tiene cambios respecto a versiones anteriores.
+
+Por lo tanto:
+
+1. Revisa la documentación correspondiente a la versión que vas a instalar.
+2. Utiliza el adaptador oficial `@prisma/adapter-pg` para PostgreSQL.
+3. Instala `pg` si es necesario para utilizar el adaptador.
+4. Configura correctamente el generador de Prisma Client.
+5. Utiliza el formato de configuración que corresponda a la versión instalada.
+6. Configura correctamente la importación del cliente generado.
+7. Evita mezclar ejemplos de Prisma 6 con Prisma 7.
+
+IMPORTANTE SOBRE COMMONJS Y ES MODULES:
+
+Mi backend actualmente utiliza CommonJS.
+
+Prisma 7 requiere adaptar la configuración del proyecto a ES Modules.
+
+Antes de modificar `package.json` para agregar `"type": "module"`:
+
+- Revisa todos los archivos que utilizan `require`.
+- Identifica qué archivos necesitan conversión.
+- Determina si el cambio afectaría a Express, rutas, controladores y servicios.
+- Propón una estrategia de transición ordenada.
+
+No conviertas automáticamente todo el proyecto.
+
+Si decides realizar la migración a ES Modules, explica los cambios necesarios y espera mi autorización.
+
+## 3.3. Conexiones de Supabase
+
+Quiero utilizar una configuración adecuada para Supabase PostgreSQL.
+
+Revisa las opciones de conexión disponibles en Supabase:
+
+- Conexión directa.
+- Session Pooler.
+- Transaction Pooler.
+
+No asumas que todas son intercambiables.
+
+Considera lo siguiente:
+
+**Conexión directa:**
+- Adecuada para conexiones persistentes cuando el entorno de red lo permite.
+- Puede requerir IPv6, dependiendo de la configuración de Supabase.
+
+**Session Pooler:**
+- Alternativa para entornos IPv4.
+- Mantiene una sesión de conexión.
+- Puede utilizarse para aplicaciones que necesitan conexiones persistentes.
+
+**Transaction Pooler:**
+- Adecuado para aplicaciones serverless o entornos con conexiones de corta duración.
+- Debe evaluarse su compatibilidad con las operaciones de Prisma.
+
+Quiero que propongas una configuración que distinga:
+
+- DATABASE_URL: conexión utilizada por Prisma Client durante la ejecución de la aplicación.
+- DIRECT_URL: conexión directa o de sesión destinada a las operaciones de introspección y herramientas CLI, cuando corresponda.
+
+La configuración debe adaptarse a la versión de Prisma instalada.
+
+En Prisma 7, configura la URL utilizada por Prisma CLI en el archivo de configuración correspondiente. No utilices propiedades obsoletas como `directUrl` dentro de `schema.prisma`.
+
+En Prisma 6, si se utiliza como alternativa, respeta su configuración específica.
+
+No copies literalmente configuraciones de otra versión.
+
+IMPORTANTE:
+
+- No inventes las credenciales.
+- No solicites que escriba mis contraseñas en el código fuente.
+- No muestres las variables de entorno en los logs.
+- No incluyas credenciales en archivos del frontend.
+- No sobrescribas mi archivo `.env` sin autorización.
+- Actualiza `.env.example` utilizando únicamente valores de ejemplo.
+
+Si las contraseñas contienen caracteres especiales, verifica que estén correctamente codificadas en la URL de PostgreSQL.
+
+# 4. BASE DE DATOS EXISTENTE EN SUPABASE
+
+La base de datos ya está creada en Supabase.
+
+Ejecuté correctamente el archivo:
+
+`bd/scripts/create_tables.sql`
+
+Supabase devolvió:
+
+`Success. No rows returned`
+
+Esto significa que las instrucciones SQL se ejecutaron correctamente.
+
+La base de datos contiene ocho tablas:
+
+1. docente
+2. alumno
+3. asignatura
+4. programa_academico
+5. programa_asignatura
+6. periodo_academico
+7. grupo
+8. inscripcion
+
+También contiene:
+
+- Vista: `v_reporte_calificaciones`.
+- Función: `validar_inscripcion()`.
+- Trigger: `trg_validar_inscripcion`.
+- Índices para optimizar las consultas.
+
+## 4.1. Modelo relacional
+
+Respeta las siguientes relaciones:
+
+| Entidad | Relación |
+|---|---|
+| Docente → Grupo | 1:N |
+| Asignatura → Grupo | 1:N |
+| Programa académico → Grupo | 1:N |
+| Periodo académico → Grupo | 1:N |
+| Programa académico ↔ Asignatura | M:N |
+| Alumno ↔ Grupo | M:N |
+
+Las relaciones M:N se resuelven mediante:
+
+- `programa_asignatura`.
+- `inscripcion`.
+
+## 4.2. Atributos de las tablas
+
+**Docente**
+- num_cuenta (PK).
+- nombre.
+- apellidos.
+- direccion.
+- sindicalizado.
+- correo_personal.
+- correo_institucional.
+- telefono.
+- nss.
+- curp.
+
+**Alumno**
+- num_cuenta (PK).
+- nombre.
+- apellidos.
+- direccion.
+- telefono.
+- correo_personal.
+- correo_institucional.
+- nss.
+- curp.
+
+**Asignatura**
+- codigo (PK).
+- nombre.
+- creditos.
+- horas_semanales.
+
+**Programa académico**
+- id_programa (PK).
+- nombre.
+- descripcion.
+
+**Programa_asignatura**
+- id_programa (PK, FK).
+- codigo_asignatura (PK, FK).
+
+**Periodo académico**
+- id_periodo (PK).
+- anio.
+- semestre.
+- fecha_inicio.
+- fecha_fin.
+
+**Grupo**
+- id_grupo (PK).
+- clave_grupo.
+- num_cuenta_docente (FK).
+- codigo_asignatura (FK).
+- id_programa (FK).
+- id_periodo (FK).
+
+**Inscripcion**
+- id_inscripcion (PK).
+- num_cuenta_alumno (FK).
+- id_grupo (FK).
+- calificacion_final.
+
+## 4.3. Reglas de negocio
+
+El sistema debe respetar estas reglas:
+
+1. Un docente puede impartir varias asignaturas.
+2. Una asignatura puede ser impartida por diferentes docentes en grupos distintos.
+3. Un docente puede impartir la misma asignatura en varios grupos.
+4. Un docente puede impartir diferentes asignaturas en diferentes programas académicos.
+5. Cada grupo tiene un docente, una asignatura, un programa académico y un periodo.
+6. Un alumno puede inscribirse a varias asignaturas simultáneamente.
+7. Un alumno puede inscribirse como máximo a ocho asignaturas por periodo.
+8. Un alumno no puede cursar dos veces la misma asignatura dentro del mismo periodo.
+9. Cada inscripción puede tener una calificación final.
+10. La calificación debe estar entre 0 y 10.
+11. Debe conservarse el historial académico.
+12. El promedio grupal debe calcularse a partir de las calificaciones finales de los alumnos inscritos.
+
+No cambies las relaciones ni los atributos de la base de datos sin justificarlo y solicitar autorización.
+
+# 5. INTROSPECCIÓN DE LA BASE DE DATOS
+
+Una vez configurada la conexión, utiliza Prisma para reconocer las tablas existentes.
+
+Para ello utiliza:
+
+`npx prisma db pull`
+
+Adapta el comando a la configuración y versión de Prisma instalada.
+
+Objetivos:
+
+1. Obtener los modelos a partir de las tablas existentes.
+2. Reconocer las claves primarias.
+3. Reconocer las claves foráneas.
+4. Reconocer las relaciones.
+5. Comprobar los tipos de datos.
+6. Verificar las restricciones existentes.
+7. Revisar el tratamiento de la vista `v_reporte_calificaciones`.
+
+Si algún elemento no puede representarse directamente mediante Prisma, explícame la limitación y propón cómo administrarlo sin modificar innecesariamente PostgreSQL.
+
+IMPORTANTE:
+
+- No utilices `prisma db push`.
+- No ejecutes `prisma migrate reset`.
+- No ejecutes migraciones destructivas.
+- No vuelvas a crear las ocho tablas.
+- No elimines registros.
+- No cambies los nombres de las columnas.
+- No alteres las claves primarias ni foráneas.
+
+La introspección debe servir únicamente para reconocer la estructura que ya existe.
+
+# 6. CONFIGURACIÓN DE PRISMA CLIENT
+
+Después de realizar la introspección:
+
+1. Genera Prisma Client.
+2. Crea un archivo centralizado para administrar la instancia de Prisma.
+3. Evita crear múltiples instancias de Prisma Client.
+4. Implementa el manejo adecuado de conexiones.
+5. Configura correctamente el cierre de conexiones cuando se detenga el servidor.
+6. Mantén una arquitectura modular.
+
+El cliente debe poder utilizarse desde los servicios y controladores del backend.
+
+# 7. PRIMERA PRUEBA DE CONEXIÓN
+
+Antes de desarrollar los módulos CRUD, quiero comprobar que Prisma funciona.
+
+Crea una prueba que permita:
+
+1. Conectarse a Supabase.
+2. Consultar los docentes registrados.
+3. Consultar los alumnos registrados.
+4. Consultar las asignaturas registradas.
+5. Mostrar los resultados en la terminal.
+6. Cerrar correctamente la conexión.
+
+Si las tablas están vacías, debe mostrar un mensaje indicando que no existen registros, sin considerarlo un error.
+
+No insertes datos de prueba en la base de datos real.
+
+# 8. DESARROLLO FUTURO DEL BACKEND
+
+Una vez que Prisma esté funcionando correctamente, desarrollaremos el backend con una arquitectura modular.
+
+Utiliza las carpetas existentes:
+
+- config/
+- controllers/
+- middlewares/
+- models/
+- routes/
+- services/
+- utils/
+
+Desarrollaremos los siguientes módulos:
+
+1. Gestión de docentes.
+2. Gestión de alumnos.
+3. Gestión de asignaturas.
+4. Gestión de programas académicos.
+5. Gestión de periodos académicos.
+6. Gestión de grupos.
+7. Gestión de inscripciones.
+8. Gestión de calificaciones.
+9. Reportes semestrales.
+
+Implementa operaciones CRUD cuando correspondan.
+
+Utiliza Express para crear una API REST.
+
+Ejemplos:
+
+GET /api/docentes
+
+POST /api/docentes
+
+GET /api/alumnos
+
+POST /api/alumnos
+
+GET /api/asignaturas
+
+GET /api/grupos
+
+GET /api/inscripciones
+
+GET /api/reportes/calificaciones
+
+Las rutas, controladores y servicios deben estar separados.
+
+Implementa:
+
+- Validación de datos.
+- Manejo centralizado de errores.
+- Códigos HTTP adecuados.
+- Validación de relaciones.
+- Restricciones de integridad.
+- Protección de información académica.
+
+No permitas eliminar registros que tengan información relacionada.
+
+# 9. DESARROLLO FUTURO DEL FRONTEND
+
+El frontend se desarrollará con:
+
+- React.
+- JavaScript.
+- HTML5.
+- CSS3.
+- React Router.
+
+Utiliza las carpetas existentes:
+
+- assets/
+- components/
+- context/
+- hooks/
+- pages/
+- routes/
+- services/
+
+El frontend debe comunicarse exclusivamente con el backend mediante solicitudes HTTP.
+
+No realices consultas directas a PostgreSQL desde React.
+
+Los módulos serán:
+
+1. Dashboard.
+2. Docentes.
+3. Alumnos.
+4. Asignaturas.
+5. Programas académicos.
+6. Periodos académicos.
+7. Grupos.
+8. Inscripciones.
+9. Calificaciones.
+10. Reportes semestrales.
+
+Cada módulo debe contar con las interfaces necesarias para administrar su información.
+
+# 10. DISEÑO VISUAL
+
+Quiero una interfaz inspirada en el sistema Syllabus UAEH.
+
+Referencia:
+
+https://syllabus.uaeh.edu.mx/
+
+También puedes revisar:
+
+`docs/Syllabus.drawio.png`
+
+No quiero una copia exacta. Quiero conservar una apariencia de plataforma académica institucional, pero con identidad visual propia.
+
+Paleta de colores:
+
+- Azul petróleo: #173B4D.
+- Verde azulado: #2A7F78.
+- Turquesa claro: #B8DED5.
+- Fondo: #F4F7F8.
+- Blanco: #FFFFFF.
+- Texto principal: #263238.
+- Texto secundario: #718096.
+- Rojo para acciones destructivas: #D9534F.
+
+Elementos visuales:
+
+- Menú lateral.
+- Barra superior.
+- Dashboard con tarjetas informativas.
+- Tablas modernas.
+- Formularios organizados.
+- Ventanas modales.
+- Iconografía consistente.
+- Bordes redondeados.
+- Sombras suaves.
+- Diseño responsive.
+
+Mantén una identidad visual uniforme en todos los módulos.
+
+# 11. SEGURIDAD Y SUPABASE RLS
+
+La base de datos fue creada inicialmente sin activar Row Level Security (RLS).
+
+No quiero que actives RLS automáticamente sin analizar primero la arquitectura de autenticación y los permisos del sistema.
+
+Antes de publicar el proyecto:
+
+1. Diseña una estrategia de autenticación.
+2. Define los roles y permisos de los usuarios.
+3. Determina qué operaciones puede realizar cada rol.
+4. Evalúa las políticas RLS necesarias.
+5. Configura las políticas de acceso correspondientes.
+6. Comprueba que el backend pueda realizar las operaciones autorizadas.
+
+Nunca expongas credenciales privilegiadas de Supabase en React.
+
+La conexión privilegiada debe permanecer exclusivamente en el entorno seguro del backend.
+
+No desactives mecanismos de seguridad para solucionar errores de conexión.
+
+# 12. FORMA DE TRABAJO
+
+Quiero trabajar por fases y autorizar cada una antes de avanzar.
+
+**FASE 1. Análisis**
+
+Revisa los archivos existentes, las dependencias y la configuración actual.
+
+**FASE 2. Integración de Prisma**
+
+Instala las dependencias compatibles y configura Prisma ORM.
+
+**FASE 3. Introspección**
+
+Reconoce las ocho tablas existentes mediante `prisma db pull`.
+
+**FASE 4. Conexión**
+
+Genera Prisma Client y realiza consultas de prueba.
+
+**FASE 5. Backend**
+
+Desarrolla los servicios, controladores y rutas REST.
+
+**FASE 6. Diseño del frontend**
+
+Crea la estructura visual general del sistema.
+
+**FASE 7. Módulos**
+
+Desarrolla las interfaces para cada entidad.
+
+**FASE 8. Integración**
+
+Conecta las interfaces con la API REST.
+
+**FASE 9. Pruebas**
+
+Verifica el funcionamiento integral del sistema.
+
+Al terminar cada fase:
+
+- Indica los archivos creados.
+- Indica los archivos modificados.
+- Explica qué cambios realizaste.
+- Explica los comandos utilizados.
+- Muestra los resultados de las pruebas.
+- Indica si existe algún problema pendiente.
+- Espera mi autorización antes de avanzar.
+
+# 13. REGLAS IMPORTANTES PARA EL AGENTE
+
+1. No sobrescribas archivos sin revisar su contenido.
+2. No elimines código funcional.
+3. No modifiques la base de datos sin autorización.
+4. No ejecutes comandos destructivos.
+5. No inventes nombres de tablas ni atributos.
+6. No agregues dependencias innecesarias.
+7. No generes todo el proyecto en un solo archivo.
+8. Mantén una arquitectura modular.
+9. Utiliza código claro y mantenible.
+10. Explica las decisiones técnicas importantes.
+11. No continúes a la siguiente fase automáticamente.
+12. No muestres ni registres contraseñas o credenciales.
+
+Si encuentras algún error, primero identifica su causa y explícame la solución antes de modificar archivos importantes.
+
+# 14. PRIMERA TAREA: COMENZAR CON LA FASE 1
+
+Por ahora, quiero que realices exclusivamente lo siguiente:
+
+1. Inspecciona la estructura completa del proyecto.
+2. Revisa `package.json`.
+3. Revisa `database.js`.
+4. Revisa `app.js` y `server.js`.
+5. Comprueba las versiones de Node.js y npm.
+6. Identifica el sistema de módulos actual.
+7. Revisa las variables de entorno necesarias sin mostrar sus valores.
+8. Evalúa qué versión de Prisma es más conveniente.
+9. Propón la configuración de conexión más adecuada para Supabase.
+10. Explica qué archivos será necesario crear o modificar.
+
+NO instales todavía las dependencias.
+
+NO modifiques archivos.
+
+NO ejecutes comandos que alteren la base de datos.
+
+Primero presenta tu diagnóstico y tu propuesta técnica.
+
+Espera mi autorización para comenzar la FASE 2.
+
+Mi objetivo inicial es tener una conexión estable y funcional entre Node.js, Prisma ORM y Supabase, conservando intactas las ocho tablas que ya creé.
