@@ -1,15 +1,13 @@
 const { prisma } = require("../models");
 
-const getReporteCalificaciones = async () => {
-  const query = `
-    SELECT *
-    FROM v_reporte_calificaciones
-    ORDER BY anio, semestre, id_grupo, cuenta_alumno
-    LIMIT 500;
-  `;
+const LIMITE_REGISTROS = 500;
 
-  return prisma.$queryRawUnsafe(query);
-};
+const getReporteCalificaciones = async () => prisma.$queryRaw`
+  SELECT *
+  FROM v_reporte_calificaciones
+  ORDER BY anio, semestre, id_grupo, cuenta_alumno
+  LIMIT ${LIMITE_REGISTROS};
+`;
 
 module.exports = {
   getReporteCalificaciones,

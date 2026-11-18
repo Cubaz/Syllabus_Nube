@@ -12,6 +12,8 @@ const { errorHandler, notFoundHandler } = require("./middlewares/errorHandler");
 
 const app = express();
 
+app.disable("x-powered-by");
+
 app.set("json replacer", (_key, value) =>
   typeof value === "bigint" ? value.toString() : value,
 );

@@ -1,7 +1,20 @@
 const { prisma } = require("../models");
 const AppError = require("../utils/AppError");
+const { assertRules, buildData, omit } = require("../utils/validation");
 
-const requiredFields = ["num_cuenta", "nombre", "apellidos"];
+const schema = {
+  num_cuenta: { label: "número de cuenta", required: true },
+  nombre: { label: "nombre", required: true },
+  apellidos: { label: "apellidos", required: true },
+  direccion: { label: "dirección" },
+  telefono: { label: "teléfono" },
+  correo_personal: { label: "correo personal", transform: "lower" },
+  correo_institucional: { label: "correo institucional", transform: "lower" },
+  nss: { label: "NSS" },
+  curp: { label: "CURP", transform: "upper" },
+};
+
+const updateSchema = omit(schema, "num_cuenta");
 
 const getAllAlumnos = async () => prisma.alumno.findMany({ orderBy: { num_cuenta: "asc" } });
 
@@ -12,17 +25,16 @@ const getAlumnoById = async (num_cuenta) => {
 };
 
 const createAlumno = async (payload) => {
-  for (const field of requiredFields) {
-    if (!payload[field]) throw new AppError(`El campo ${field} es obligatorio`, 400);
-  }
-
-  return prisma.alumno.create({ data: payload });
+  const data = buildData(payload, schema);
+  assertRules("alumno", data);
+  return prisma.alumno.create({ data });
 };
 
 const updateAlumno = async (num_cuenta, payload) => {
-  await getAlumnoById(num_cuenta);
-  const { num_cuenta: _num_cuenta, ...rest } = payload;
-  return prisma.alumno.update({ where: { num_cuenta }, data: rest });
+  const alumno = await getAlumnoById(num_cuenta);
+  const data = buildData(payload, updateSchema, { partial: true });
+  assertRules("alumno", { ...alumno, ...data });
+  return prisma.alumno.update({ where: { num_cuenta }, data });
 };
 
 const deleteAlumno = async (num_cuenta) => {

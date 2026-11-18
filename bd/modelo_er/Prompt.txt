@@ -1,8 +1,7 @@
-# PROYECTO: SISTEMA DE GESTIÓN ACADÉMICA – PREPARATORIA UAEH ALFAJAYUCAN
-
+# PROYECTO: SISTEMA DE GESTIÓN ACADÉMICA – Instituto de Ciencias Básicas e Ingeniería
 Actúa como un desarrollador Full Stack Senior especializado en Node.js, Express, React, PostgreSQL, Supabase y Prisma ORM.
 
-Quiero que me ayudes a desarrollar mi proyecto universitario de Programación Web: un sistema web para administrar la información académica de la nueva preparatoria de la Universidad Autónoma del Estado de Hidalgo (UAEH), ubicada en Alfajayucan, Hidalgo.
+Quiero que me ayudes a desarrollar mi proyecto universitario de Programación Web: un sistema web para administrar la información académica del ICBI de la Universidad Autónoma del Estado de Hidalgo (UAEH), ubicada en Mineral de la Reforma, Hidalgo.
 
 El proyecto ya está iniciado y tiene una estructura de carpetas, archivos de configuración y una base de datos funcional en Supabase.
 

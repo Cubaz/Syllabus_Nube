@@ -1,19 +1,32 @@
 import EntityPage from "../components/EntityPage";
+import { personaFields } from "../fields/personaFields";
+import { fullName, yesNo } from "../utils/format";
 
 const fields = [
-  { name: "num_cuenta", label: "Número de cuenta", required: true },
-  { name: "nombre", label: "Nombre", required: true },
-  { name: "apellidos", label: "Apellidos", required: true },
-  { name: "correo_institucional", label: "Correo institucional", nullable: true },
-  { name: "telefono", label: "Teléfono", nullable: true },
+  ...personaFields,
+  { name: "sindicalizado", label: "Docente sindicalizado", type: "checkbox" },
 ];
 
 const columns = [
-  { key: "num_cuenta", label: "Cuenta" },
-  { key: "nombre", label: "Nombre" },
-  { key: "apellidos", label: "Apellidos" },
-  { key: "correo_institucional", label: "Correo institucional" },
-  { key: "telefono", label: "Teléfono" },
+  { key: "num_cuenta", label: "Número de cuenta", nowrap: true, filter: "text" },
+  { key: "nombre", label: "Nombre", filter: "text" },
+  { key: "apellidos", label: "Apellidos", filter: "text" },
+  { key: "direccion", label: "Dirección", filter: "text" },
+  {
+    key: "sindicalizado",
+    label: "Sindicalizado",
+    value: (item) => yesNo(item.sindicalizado),
+    filter: "select",
+    filterOptions: [
+      { value: "Sí", label: "Sí" },
+      { value: "No", label: "No" },
+    ],
+  },
+  { key: "correo_institucional", label: "Correo institucional", filter: "text" },
+  { key: "correo_personal", label: "Correo personal", filter: "text" },
+  { key: "telefono", label: "Teléfono", nowrap: true, filter: "text" },
+  { key: "nss", label: "NSS", nowrap: true, filter: "text" },
+  { key: "curp", label: "CURP", nowrap: true, filter: "text" },
 ];
 
 function DocentesPage() {
@@ -26,6 +39,8 @@ function DocentesPage() {
       columns={columns}
       emptyMessage="Aún no hay docentes registrados."
       idKey="num_cuenta"
+      entity="docente"
+      describeItem={fullName}
     />
   );
 }

@@ -4,6 +4,8 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "db:test": "node src/scripts/test-prisma-connection.js",
     "prisma:generate": "prisma generate",
     "prisma:pull": "prisma db pull",
     "prisma:studio": "prisma studio"
@@ -15,6 +17,7 @@
     "dotenv": "^17.0.0",
     "express": "^5.0.0",
     "pg": "^8.0.0",
+    "postgres": "^4.1.1",
     "prisma": "^7.10.1"
   }
 }

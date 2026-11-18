@@ -9,6 +9,7 @@ import GruposPage from "../pages/GruposPage";
 import InscripcionesPage from "../pages/InscripcionesPage";
 import CalificacionesPage from "../pages/CalificacionesPage";
 import ReportesPage from "../pages/ReportesPage";
+import NotFoundPage from "../pages/NotFoundPage";
 
 function AppRoutes() {
   return (
@@ -23,6 +24,7 @@ function AppRoutes() {
       <Route path="/inscripciones" element={<InscripcionesPage />} />
       <Route path="/calificaciones" element={<CalificacionesPage />} />
       <Route path="/reportes" element={<ReportesPage />} />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 }

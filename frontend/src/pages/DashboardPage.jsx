@@ -1,12 +1,19 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import CardStat from "../components/CardStat";
 import { apiGet } from "../services/api";
 
 const initialMetrics = [
-  { label: "Docentes", value: "—", detail: "Registrados", tone: "primary" },
-  { label: "Alumnos", value: "—", detail: "Registrados", tone: "success" },
-  { label: "Asignaturas", value: "—", detail: "Registradas", tone: "accent" },
-  { label: "Grupos", value: "—", detail: "Registrados", tone: "warning" },
+  { label: "Docentes", value: "—", detail: "Registrados", tone: "primary", to: "/docentes" },
+  { label: "Alumnos", value: "—", detail: "Registrados", tone: "success", to: "/alumnos" },
+  { label: "Asignaturas", value: "—", detail: "Registradas", tone: "accent", to: "/asignaturas" },
+  { label: "Grupos", value: "—", detail: "Registrados", tone: "warning", to: "/grupos" },
+];
+
+const quickLinks = [
+  { label: "Inscribir alumno", description: "Asignar un alumno a un grupo", to: "/inscripciones" },
+  { label: "Capturar calificaciones", description: "Actualizar calificaciones finales", to: "/calificaciones" },
+  { label: "Ver reportes", description: "Calificaciones por periodo y grupo", to: "/reportes" },
 ];
 
 function DashboardPage() {
@@ -28,7 +35,7 @@ function DashboardPage() {
         ]);
         if (!active) return;
 
-        const registros = inscripciones.data;
+        const registros = inscripciones.data || [];
         const calificaciones = registros
           .filter((item) => item.calificacion_final !== null && item.calificacion_final !== undefined)
           .map((item) => Number(item.calificacion_final))
@@ -37,12 +44,8 @@ function DashboardPage() {
           ? (calificaciones.reduce((total, grade) => total + grade, 0) / calificaciones.length).toFixed(2)
           : null;
 
-        setMetrics([
-          { ...initialMetrics[0], value: String(docentes.data.length) },
-          { ...initialMetrics[1], value: String(alumnos.data.length) },
-          { ...initialMetrics[2], value: String(asignaturas.data.length) },
-          { ...initialMetrics[3], value: String(grupos.data.length) },
-        ]);
+        const counts = [docentes, alumnos, asignaturas, grupos].map((payload) => (payload.data || []).length);
+        setMetrics(initialMetrics.map((metric, index) => ({ ...metric, value: String(counts[index]) })));
         setSummary({
           inscripciones: registros.length,
           calificacionesPendientes: registros.length - calificaciones.length,
@@ -62,14 +65,21 @@ function DashboardPage() {
     };
   }, []);
 
+  const loadingText = error ? "—" : "Cargando...";
+
   return (
     <section className="page-block">
-      <div className="page-header">
-        <div>
-          <p className="eyebrow">Resumen institucional</p>
-          <h3>Dashboard</h3>
+      <header className="page-header">
+        <p className="eyebrow">Resumen institucional</p>
+        <h3>Dashboard</h3>
+        <p className="page-description">Vista general de la información académica registrada.</p>
+      </header>
+
+      {error && (
+        <div className="message error" role="alert">
+          <span>{error}</span>
         </div>
-      </div>
+      )}
 
       <div className="stats-grid">
         {metrics.map((metric) => (
@@ -79,27 +89,42 @@ function DashboardPage() {
             value={metric.value}
             detail={metric.detail}
             tone={metric.tone}
+            to={metric.to}
           />
         ))}
       </div>
 
-      {error && <div className="message error">{error}</div>}
-
       <div className="panel-grid">
         <article className="panel-card">
           <h4>Indicadores principales</h4>
-          <ul className="list-plain">
-            <li>Promedio de calificaciones: {summary?.promedio ?? "Sin calificaciones registradas"}</li>
-            <li>Inscripciones: {summary?.inscripciones ?? "Cargando..."}</li>
-            <li>Calificaciones pendientes: {summary?.calificacionesPendientes ?? "Cargando..."}</li>
-          </ul>
+          <dl className="kpi-list">
+            <div>
+              <dt>Promedio de calificaciones</dt>
+              <dd>{summary ? summary.promedio ?? "Sin calificaciones" : loadingText}</dd>
+            </div>
+            <div>
+              <dt>Inscripciones</dt>
+              <dd>{summary ? summary.inscripciones : loadingText}</dd>
+            </div>
+            <div>
+              <dt>Calificaciones pendientes</dt>
+              <dd>{summary ? summary.calificacionesPendientes : loadingText}</dd>
+            </div>
+          </dl>
+          <p className="card-note">Las calificaciones pendientes no se incluyen en el promedio.</p>
         </article>
 
         <article className="panel-card">
-          <h4>Actividades recientes</h4>
-          <ul className="list-plain">
-            <li>Datos sincronizados desde los registros actuales de la API.</li>
-            <li>Las calificaciones pendientes no se incluyen en el promedio.</li>
+          <h4>Accesos rápidos</h4>
+          <ul className="quick-links">
+            {quickLinks.map((link) => (
+              <li key={link.to}>
+                <Link to={link.to} className="quick-link">
+                  <strong>{link.label}</strong>
+                  <span>{link.description}</span>
+                </Link>
+              </li>
+            ))}
           </ul>
         </article>
       </div>

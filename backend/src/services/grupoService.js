@@ -1,130 +1,109 @@
 const { prisma } = require("../models");
 const AppError = require("../utils/AppError");
+const { assertRules, buildData, isFutureDate, parseId } = require("../utils/validation");
 
-const requiredFields = ["clave_grupo", "num_cuenta_docente", "codigo_asignatura", "id_programa", "id_periodo"];
+const schema = {
+  clave_grupo: { label: "clave del grupo", required: true, transform: "upper" },
+  num_cuenta_docente: { label: "docente", required: true },
+  codigo_asignatura: { label: "asignatura", required: true, transform: "upper" },
+  id_programa: { label: "programa académico", type: "id", required: true },
+  id_periodo: { label: "periodo", type: "id", required: true },
+};
 
-const getAllGrupos = async () => prisma.grupo.findMany({
-  include: {
-    docente: true,
-    periodo_academico: true,
-    programa_asignatura: {
-      include: {
-        asignatura: true,
-        programa_academico: true,
-      },
+const grupoInclude = {
+  docente: true,
+  periodo_academico: true,
+  programa_asignatura: {
+    include: {
+      asignatura: true,
+      programa_academico: true,
     },
   },
-  orderBy: { id_grupo: "asc" },
-});
+};
+
+const getAllGrupos = async () =>
+  prisma.grupo.findMany({ include: grupoInclude, orderBy: { id_grupo: "asc" } });
 
 const getGrupoById = async (id_grupo) => {
   const grupo = await prisma.grupo.findUnique({
-    where: { id_grupo: Number(id_grupo) },
-    include: {
-      docente: true,
-      periodo_academico: true,
-      programa_asignatura: {
-        include: {
-          asignatura: true,
-          programa_academico: true,
-        },
-      },
-    },
+    where: { id_grupo: parseId(id_grupo, "ID del grupo") },
+    include: grupoInclude,
   });
 
   if (!grupo) throw new AppError("Grupo no encontrado", 404);
   return grupo;
 };
 
-const createGrupo = async (payload) => {
-  for (const field of requiredFields) {
-    if (payload[field] === undefined || payload[field] === null || payload[field] === "") {
-      throw new AppError(`El campo ${field} es obligatorio`, 400);
-    }
-  }
+const assertRelaciones = async ({ num_cuenta_docente, codigo_asignatura, id_programa, id_periodo }) => {
+  const [docente, periodo, programa, asignatura, relacion] = await Promise.all([
+    prisma.docente.findUnique({ where: { num_cuenta: num_cuenta_docente } }),
+    prisma.periodo_academico.findUnique({ where: { id_periodo } }),
+    prisma.programa_academico.findUnique({ where: { id_programa } }),
+    prisma.asignatura.findUnique({ where: { codigo: codigo_asignatura } }),
+    prisma.programa_asignatura.findUnique({
+      where: { id_programa_codigo_asignatura: { id_programa, codigo_asignatura } },
+    }),
+  ]);
 
-  const docenteExiste = await prisma.docente.findUnique({ where: { num_cuenta: payload.num_cuenta_docente } });
-  if (!docenteExiste) throw new AppError("El docente especificado no existe", 400);
-
-  const periodoExiste = await prisma.periodo_academico.findUnique({ where: { id_periodo: Number(payload.id_periodo) } });
-  if (!periodoExiste) throw new AppError("El periodo académico especificado no existe", 400);
-
-  const programaExiste = await prisma.programa_academico.findUnique({ where: { id_programa: Number(payload.id_programa) } });
-  if (!programaExiste) throw new AppError("El programa académico especificado no existe", 400);
-
-  const asignaturaExiste = await prisma.asignatura.findUnique({ where: { codigo: payload.codigo_asignatura } });
-  if (!asignaturaExiste) throw new AppError("La asignatura especificada no existe", 400);
-
-  const relacionProgramaAsignatura = await prisma.programa_asignatura.findUnique({
-    where: {
-      id_programa_codigo_asignatura: {
-        id_programa: Number(payload.id_programa),
-        codigo_asignatura: payload.codigo_asignatura,
-      },
-    },
-  });
-
-  if (!relacionProgramaAsignatura) {
+  if (!docente) throw new AppError("El docente especificado no existe", 400);
+  if (!periodo) throw new AppError("El periodo académico especificado no existe", 400);
+  if (!programa) throw new AppError("El programa académico especificado no existe", 400);
+  if (!asignatura) throw new AppError("La asignatura especificada no existe", 400);
+  if (!relacion) {
     throw new AppError("La asignatura no pertenece al programa académico seleccionado", 400);
   }
+};
 
-  return prisma.grupo.create({
-    data: {
-      clave_grupo: payload.clave_grupo,
-      num_cuenta_docente: payload.num_cuenta_docente,
-      codigo_asignatura: payload.codigo_asignatura,
-      id_programa: Number(payload.id_programa),
-      id_periodo: Number(payload.id_periodo),
-    },
-  });
+const createGrupo = async (payload) => {
+  const data = buildData(payload, schema);
+  assertRules("grupo", data);
+  await assertRelaciones(data);
+  return prisma.grupo.create({ data });
 };
 
 const updateGrupo = async (id_grupo, payload) => {
-  await getGrupoById(id_grupo);
+  const grupo = await getGrupoById(id_grupo);
+  const data = buildData(payload, schema, { partial: true });
+  assertRules("grupo", { ...grupo, ...data });
 
-  const data = { ...payload };
-  if (data.id_grupo) delete data.id_grupo;
-  if (data.id_programa) data.id_programa = Number(data.id_programa);
-  if (data.id_periodo) data.id_periodo = Number(data.id_periodo);
+  await assertRelaciones({
+    num_cuenta_docente: data.num_cuenta_docente ?? grupo.num_cuenta_docente,
+    codigo_asignatura: data.codigo_asignatura ?? grupo.codigo_asignatura,
+    id_programa: data.id_programa ?? grupo.id_programa,
+    id_periodo: data.id_periodo ?? grupo.id_periodo,
+  });
 
-  if (data.num_cuenta_docente) {
-    const docenteExiste = await prisma.docente.findUnique({ where: { num_cuenta: data.num_cuenta_docente } });
-    if (!docenteExiste) throw new AppError("El docente especificado no existe", 400);
-  }
-
-  if (data.id_programa && data.codigo_asignatura) {
-    const relacion = await prisma.programa_asignatura.findUnique({
-      where: {
-        id_programa_codigo_asignatura: {
-          id_programa: Number(data.id_programa),
-          codigo_asignatura: data.codigo_asignatura,
-        },
-      },
+  if (data.id_periodo !== undefined && data.id_periodo !== grupo.id_periodo) {
+    const nuevoPeriodo = await prisma.periodo_academico.findUnique({ where: { id_periodo: data.id_periodo } });
+    const calificadas = await prisma.inscripcion.count({
+      where: { id_grupo: grupo.id_grupo, calificacion_final: { not: null } },
     });
-
-    if (!relacion) {
-      throw new AppError("La asignatura no pertenece al programa académico seleccionado", 400);
+    if (calificadas > 0 && isFutureDate(nuevoPeriodo.fecha_inicio)) {
+      throw new AppError(
+        `No se puede pasar el grupo a un periodo que aún no inicia: ya tiene ${calificadas} calificaciones capturadas`,
+        400,
+      );
     }
   }
 
   return prisma.grupo.update({
-    where: { id_grupo: Number(id_grupo) },
+    where: { id_grupo: grupo.id_grupo },
     data,
   });
 };
 
 const deleteGrupo = async (id_grupo) => {
-  await getGrupoById(id_grupo);
+  const grupo = await getGrupoById(id_grupo);
 
   const inscripcionesRelacionadas = await prisma.inscripcion.count({
-    where: { id_grupo: Number(id_grupo) },
+    where: { id_grupo: grupo.id_grupo },
   });
 
   if (inscripcionesRelacionadas > 0) {
     throw new AppError("No se puede eliminar el grupo porque tiene inscripciones asociadas", 400);
   }
 
-  await prisma.grupo.delete({ where: { id_grupo: Number(id_grupo) } });
+  await prisma.grupo.delete({ where: { id_grupo: grupo.id_grupo } });
   return { message: "Grupo eliminado correctamente" };
 };
 

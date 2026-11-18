@@ -1,13 +1,21 @@
 const { prisma } = require("../models");
 const AppError = require("../utils/AppError");
+const { assertRules, buildData, omit } = require("../utils/validation");
 
-const requiredFields = ["num_cuenta", "nombre", "apellidos"];
-
-const normalizeData = (payload = {}) => {
-  const data = { ...payload };
-  delete data.num_cuenta;
-  return data;
+const schema = {
+  num_cuenta: { label: "número de cuenta", required: true },
+  nombre: { label: "nombre", required: true },
+  apellidos: { label: "apellidos", required: true },
+  direccion: { label: "dirección" },
+  sindicalizado: { label: "sindicalizado", type: "boolean" },
+  correo_personal: { label: "correo personal", transform: "lower" },
+  correo_institucional: { label: "correo institucional", transform: "lower" },
+  telefono: { label: "teléfono" },
+  nss: { label: "NSS" },
+  curp: { label: "CURP", transform: "upper" },
 };
+
+const updateSchema = omit(schema, "num_cuenta");
 
 const getAllDocentes = async () => prisma.docente.findMany({ orderBy: { num_cuenta: "asc" } });
 
@@ -17,20 +25,21 @@ const getDocenteById = async (num_cuenta) => {
   return docente;
 };
 
-const createDocente = async (payload) => {
-  for (const field of requiredFields) {
-    if (!payload[field]) throw new AppError(`El campo ${field} es obligatorio`, 400);
-  }
+const withDefaults = (data) => ({ ...data, sindicalizado: data.sindicalizado ?? false });
 
-  return prisma.docente.create({ data: payload });
+const createDocente = async (payload) => {
+  const data = withDefaults(buildData(payload, schema));
+  assertRules("docente", data);
+  return prisma.docente.create({ data });
 };
 
 const updateDocente = async (num_cuenta, payload) => {
-  await getDocenteById(num_cuenta);
-  return prisma.docente.update({
-    where: { num_cuenta },
-    data: normalizeData(payload),
-  });
+  const docente = await getDocenteById(num_cuenta);
+  const data = buildData(payload, updateSchema, { partial: true });
+  if (data.sindicalizado === null) data.sindicalizado = false;
+  assertRules("docente", { ...docente, ...data });
+
+  return prisma.docente.update({ where: { num_cuenta }, data });
 };
 
 const deleteDocente = async (num_cuenta) => {
