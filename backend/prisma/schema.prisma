@@ -1,0 +1,107 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model alumno {
+  num_cuenta           String        @id @db.VarChar(20)
+  nombre               String        @db.VarChar(100)
+  apellidos            String        @db.VarChar(150)
+  direccion            String?
+  telefono             String?       @db.VarChar(20)
+  correo_personal      String?       @unique @db.VarChar(150)
+  correo_institucional String?       @unique @db.VarChar(150)
+  nss                  String?       @unique @db.VarChar(20)
+  curp                 String?       @unique @db.VarChar(18)
+  inscripcion          inscripcion[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model asignatura {
+  codigo              String                @id @db.VarChar(20)
+  nombre              String                @db.VarChar(150)
+  creditos            Int                   @db.SmallInt
+  horas_semanales     Int                   @db.SmallInt
+  programa_asignatura programa_asignatura[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model docente {
+  num_cuenta           String  @id @db.VarChar(20)
+  nombre               String  @db.VarChar(100)
+  apellidos            String  @db.VarChar(150)
+  direccion            String?
+  sindicalizado        Boolean @default(false)
+  correo_personal      String? @unique @db.VarChar(150)
+  correo_institucional String? @unique @db.VarChar(150)
+  telefono             String? @db.VarChar(20)
+  nss                  String? @unique @db.VarChar(20)
+  curp                 String? @unique @db.VarChar(18)
+  grupo                grupo[]
+}
+
+model grupo {
+  id_grupo            BigInt              @id @default(autoincrement())
+  clave_grupo         String              @db.VarChar(30)
+  num_cuenta_docente  String              @db.VarChar(20)
+  codigo_asignatura   String              @db.VarChar(20)
+  id_programa         BigInt
+  id_periodo          BigInt
+  docente             docente             @relation(fields: [num_cuenta_docente], references: [num_cuenta], map: "fk_grupo_docente")
+  periodo_academico   periodo_academico   @relation(fields: [id_periodo], references: [id_periodo], map: "fk_grupo_periodo")
+  programa_asignatura programa_asignatura @relation(fields: [id_programa, codigo_asignatura], references: [id_programa, codigo_asignatura], map: "fk_grupo_programa_asignatura")
+  inscripcion         inscripcion[]
+
+  @@unique([clave_grupo, id_periodo], map: "uq_grupo_periodo")
+  @@index([codigo_asignatura], map: "idx_grupo_asignatura")
+  @@index([num_cuenta_docente], map: "idx_grupo_docente")
+  @@index([id_periodo], map: "idx_grupo_periodo_id")
+  @@index([id_programa], map: "idx_grupo_programa")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model inscripcion {
+  id_inscripcion     BigInt   @id @default(autoincrement())
+  num_cuenta_alumno  String   @db.VarChar(20)
+  id_grupo           BigInt
+  calificacion_final Decimal? @db.Decimal(4, 2)
+  alumno             alumno   @relation(fields: [num_cuenta_alumno], references: [num_cuenta], map: "fk_inscripcion_alumno")
+  grupo              grupo    @relation(fields: [id_grupo], references: [id_grupo], map: "fk_inscripcion_grupo")
+
+  @@unique([num_cuenta_alumno, id_grupo], map: "uq_alumno_grupo")
+  @@index([num_cuenta_alumno], map: "idx_inscripcion_alumno")
+  @@index([id_grupo], map: "idx_inscripcion_grupo")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model periodo_academico {
+  id_periodo   BigInt   @id @default(autoincrement())
+  anio         Int      @db.SmallInt
+  semestre     Int      @db.SmallInt
+  fecha_inicio DateTime @db.Date
+  fecha_fin    DateTime @db.Date
+  grupo        grupo[]
+
+  @@unique([anio, semestre], map: "uq_periodo")
+}
+
+model programa_academico {
+  id_programa         BigInt                @id @default(autoincrement())
+  nombre              String                @unique @db.VarChar(150)
+  descripcion         String?
+  programa_asignatura programa_asignatura[]
+}
+
+model programa_asignatura {
+  id_programa        BigInt
+  codigo_asignatura  String             @db.VarChar(20)
+  grupo              grupo[]
+  asignatura         asignatura         @relation(fields: [codigo_asignatura], references: [codigo], map: "fk_pa_asignatura")
+  programa_academico programa_academico @relation(fields: [id_programa], references: [id_programa], map: "fk_pa_programa")
+
+  @@id([id_programa, codigo_asignatura])
+}
